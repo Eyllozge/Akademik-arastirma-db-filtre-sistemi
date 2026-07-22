@@ -24,8 +24,7 @@ def parse_harman(pub): #ham veriyi çeviren fonksiyon
     }
 
 def split_name(full_name):
-
-    parts = full_name.strip().split(" ", 1)
+    parts = full_name.strip().rsplit(" ", 1)
     if len(parts) == 2:
         return parts[0], parts[1]
     return full_name, ""
