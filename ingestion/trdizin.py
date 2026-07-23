@@ -2,13 +2,14 @@ import requests
 from database import SessionLocal
 from models import articles, members, authors, institutions, middle
 import uuid
+from models import citations 
 
 url = "https://search.trdizin.gov.tr/api/defaultSearch/publication/"
 params = {
-    "q": "yapay zeka",
+    "q": "teknoloji",
     "order": "relevance-DESC",
     "page": 1,
-    "limit": 5
+    "limit": 25
 }
 
 response = requests.get(url, params=params)
@@ -28,7 +29,7 @@ def parse_publication(pub):
         })
 
     citations = []
-    for ref in source.get("references", []):
+    for ref in (source.get("references") or []):
         if ref.get("targetPublication", 0) != 0:
             citations.append(ref["targetPublication"])
 
@@ -42,7 +43,18 @@ def save_to_db(parsed_list):
         for item in parsed_list:
             db_article = articles(art_id=item["art_id"], article_name=item["title"], upload_date=None)
             db.merge(db_article)
+            
+            for cited_id in item["citations"]:
+                target_exists = db.query(articles).filter_by(art_id=cited_id).first()
+                if not target_exists:
+                   continue   # atıf yapılan makale sistemde yok, bu ilişkiyi atla
 
+                existing_citation = db.query(citations).filter_by(
+                     art_id=item["art_id"], other_art_id=cited_id
+                ).first()
+                if not existing_citation:
+                   db.add(citations(art_id=item["art_id"], other_art_id=cited_id))
+            
             for author_info in item["authors"]:
                 inst_name = author_info["institution"]
                 db_inst = None
