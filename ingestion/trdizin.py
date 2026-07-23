@@ -75,8 +75,11 @@ def save_to_db(parsed_list):
                     )
                     db.add(db_author)
                     db.flush()
+                    
+                existing_relation = db.query(middle).filter_by(art_id=item["art_id"], auth_id=db_author.auth_id).first()
+                if not existing_relation:
 
-                db.add(middle(art_id=item["art_id"], auth_id=db_author.auth_id))
+                     db.add(middle(art_id=item["art_id"], auth_id=db_author.auth_id))
 
         db.commit()
         print("Kayıt başarılı!")
